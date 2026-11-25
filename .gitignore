@@ -1,0 +1,36 @@
+# Secrets & Local Env
+.env
+.env.*
+!.env.example
+*.vault.json
+*.key
+*.pem
+
+# Runtime Data & SQLite State
+data/
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+logs/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+dist/
+build/
+*.egg-info/
+
+# OS & Editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,26 @@
+# One-Click Render.com Blueprint — ZERO Credit Card & ZERO .edu Email Required
+# Click "New -> Blueprint" on Render.com and connect this GitHub repo.
+# Note: Render Free Web Services sleep after 15 minutes of zero inbound HTTP traffic.
+# When connected via X4_CloudBridge_EA.mq5 (pushing every 5-15s) or an uptime check on /healthz,
+# it receives regular traffic within Render's 750 free hours/month allowance.
+
+services:
+  - type: web
+    name: x4-cloud-terminal
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    envVars:
+      - key: X4_BROKER_MODE
+        value: mt5_bridge
+      - key: X4_AUTO_START_ENGINE
+        value: "false"
+      - key: REAL_EXECUTION_UNLOCK
+        value: "false"
+      - key: X4_SYMBOLS
+        value: XAUUSD,EURUSD,GBPUSD,USDJPY
+      - key: X4_API_TOKEN
+        generateValue: true
+      - key: X4_BRIDGE_SECRET
+        generateValue: true

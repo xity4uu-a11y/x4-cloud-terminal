@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>X4 Cloud Terminal</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo-badge">X4</div>
+      <div>
+        <div class="brand-title">X4 CLOUD TERMINAL</div>
+        <div class="brand-sub">Zero-Azure · Cross-Platform Trading Core &amp; MT5 Bridge</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div id="clockDisplay" class="pill mono">--:--:-- UTC</div>
+      <div id="modeBadge" class="pill pill-neutral">MODE: --</div>
+      <div id="connBadge" class="pill pill-warn">CONNECTING...</div>
+      <button id="authBtn" class="btn btn-ghost" type="button">API Token</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="authBanner" class="banner hidden">
+      <span>Operator authentication required. Enter your <code>X4_API_TOKEN</code> to unlock terminal telemetry &amp; controls.</span>
+      <div class="banner-actions">
+        <input id="tokenInput" type="password" placeholder="Paste X4_API_TOKEN" autocomplete="off" />
+        <button id="saveTokenBtn" class="btn btn-primary" type="button">Connect</button>
+      </div>
+    </section>
+
+    <section class="kpi-grid">
+      <article class="card kpi">
+        <div class="kpi-label">Account Equity</div>
+        <div id="kpiEquity" class="kpi-value mono">$0.00</div>
+        <div id="kpiAccountMeta" class="kpi-meta">--</div>
+      </article>
+      <article class="card kpi">
+        <div class="kpi-label">Balance / Free Margin</div>
+        <div id="kpiBalance" class="kpi-value mono">$0.00</div>
+        <div id="kpiMargin" class="kpi-meta">Free: $0.00</div>
+      </article>
+      <article class="card kpi">
+        <div class="kpi-label">Daily / Peak Drawdown</div>
+        <div id="kpiDrawdown" class="kpi-value mono">0.00% / 0.00%</div>
+        <div id="kpiPolicyLimits" class="kpi-meta">Policy limits loading...</div>
+      </article>
+      <article class="card kpi">
+        <div class="kpi-label">Engine &amp; Safety State</div>
+        <div id="kpiEngineState" class="kpi-value">SAFE-HALTED</div>
+        <div id="kpiEngineMeta" class="kpi-meta">Audit Chain: verifying...</div>
+      </article>
+    </section>
+
+    <section class="grid-two">
+      <article class="card">
+        <div class="card-head">
+          <h2>Autonomous Engine &amp; Kill Switch</h2>
+          <span id="policyHash" class="mono muted">SHA-256: --</span>
+        </div>
+        <div class="control-row">
+          <label for="strategySelect">Deterministic Strategy</label>
+          <select id="strategySelect">
+            <option value="keltner_atr_breakout">keltner_atr_breakout</option>
+            <option value="ema_rsi_pullback">ema_rsi_pullback</option>
+          </select>
+        </div>
+        <div class="btn-row">
+          <button id="startEngineBtn" class="btn btn-primary" type="button">Start Engine</button>
+          <button id="stopEngineBtn" class="btn btn-secondary" type="button">Pause Engine</button>
+          <button id="killSwitchBtn" class="btn btn-danger" type="button">Emergency Kill Switch</button>
+        </div>
+        <p id="engineSummary" class="status-note">Waiting for telemetry...</p>
+        <div id="bridgeBox" class="bridge-box hidden">
+          <h3>MT5 Cloud Bridge Status</h3>
+          <p id="bridgeStatusText" class="mono small">--</p>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <h2>Risk-Gated Manual Ticket</h2>
+          <span class="muted small">Always validated by PolicyEngine</span>
+        </div>
+        <form id="orderForm" class="order-form">
+          <div class="form-grid">
+            <label>
+              Symbol
+              <select id="orderSymbol">
+                <option value="XAUUSD">XAUUSD</option>
+                <option value="EURUSD">EURUSD</option>
+                <option value="GBPUSD">GBPUSD</option>
+                <option value="USDJPY">USDJPY</option>
+              </select>
+            </label>
+            <label>
+              Side
+              <select id="orderSide">
+                <option value="BUY">BUY</option>
+                <option value="SELL">SELL</option>
+              </select>
+            </label>
+            <label>
+              Stop Loss (Required)
+              <input id="orderSl" type="number" step="any" required placeholder="e.g. 2675.00" />
+            </label>
+            <label>
+              Take Profit (Optional)
+              <input id="orderTp" type="number" step="any" placeholder="e.g. 2705.00" />
+            </label>
+            <label>
+              Volume (blank = auto risk-sized)
+              <input id="orderVol" type="number" step="0.01" min="0.01" placeholder="Auto" />
+            </label>
+          </div>
+          <div class="btn-row">
+            <button id="fillPresetBtn" class="btn btn-ghost" type="button">Auto-Fill SL/TP from Live Quote</button>
+            <button class="btn btn-primary" type="submit">Submit Risk-Checked Order</button>
+          </div>
+          <div id="orderFeedback" class="status-note"></div>
+        </form>
+      </article>
+    </section>
+
+    <section class="grid-two">
+      <article class="card">
+        <div class="card-head">
+          <h2>Live Market Quotes</h2>
+          <span class="muted small">Bid / Ask / Spread</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Symbol</th><th>Bid</th><th>Ask</th><th>Spread (pips)</th><th>Age</th></tr>
+            </thead>
+            <tbody id="quotesBody"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <h2>Open Positions</h2>
+          <span id="posCount" class="muted small">0 open</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Ticket</th><th>Symbol</th><th>Side</th><th>Vol</th><th>Open</th><th>SL / TP</th><th>PnL</th><th>Action</th></tr>
+            </thead>
+            <tbody id="positionsBody"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section class="grid-two">
+      <article class="card">
+        <div class="card-head">
+          <h2>Recent Orders (SQLite WAL Ledger)</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Symbol</th><th>Side</th><th>Vol</th><th>Status</th><th>Strategy</th></tr>
+            </thead>
+            <tbody id="ordersBody"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <h2>SHA-256 Hash-Chained Audit Log</h2>
+          <span id="auditIntegrity" class="mono small">--</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>UTC Time</th><th>Actor</th><th>Action</th><th>Hash</th></tr>
+            </thead>
+            <tbody id="auditBody"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

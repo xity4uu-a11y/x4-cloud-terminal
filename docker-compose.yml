@@ -1,0 +1,46 @@
+services:
+  x4-cloud:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: x4-cloud-terminal
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8501}:8501"
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "8501"
+      X4_DATA_DIR: "/app/data"
+      X4_BROKER_MODE: "${X4_BROKER_MODE:-paper}"
+      X4_API_TOKEN: "${X4_API_TOKEN:-}"
+      X4_BRIDGE_SECRET: "${X4_BRIDGE_SECRET:-change-me-generate-a-different-32-byte-secret}"
+      X4_DEFAULT_STRATEGY: "${X4_DEFAULT_STRATEGY:-keltner_atr_breakout}"
+      X4_SYMBOLS: "${X4_SYMBOLS:-XAUUSD,EURUSD,GBPUSD,USDJPY}"
+      X4_AUTO_START_ENGINE: "${X4_AUTO_START_ENGINE:-false}"
+      REAL_EXECUTION_UNLOCK: "false"
+      X4_ALERT_WEBHOOK_URL: "${X4_ALERT_WEBHOOK_URL:-}"
+    volumes:
+      - x4_cloud_data:/app/data
+
+  # Optional: Run full MetaTrader 5 under Linux + Wine + noVNC (no Windows VM needed!)
+  # Launch with: docker compose --profile mt5-wine up -d
+  mt5-wine:
+    profiles: ["mt5-wine"]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.mt5-wine
+    container_name: x4-mt5-wine
+    restart: unless-stopped
+    shm_size: "1gb"
+    ports:
+      - "127.0.0.1:6080:6080"
+    environment:
+      VNC_PASSWORD: "${VNC_PASSWORD:-x4mt5vnc}"
+    volumes:
+      - mt5_wine_data:/mt5/.wine
+    depends_on:
+      - x4-cloud
+
+volumes:
+  x4_cloud_data:
+  mt5_wine_data:
